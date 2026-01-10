@@ -2,59 +2,722 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Free AI Bot Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Ai bot</title>
+    
+    <!-- Libraries for Zip Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts: Montserrat (Headers) & Inter (Body/UI) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #0f0f16; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: #1e1e2e; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; }
-        h1 { color: #8aadf4; text-align: center; margin-bottom: 20px; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #27293a; border: 1px solid #3b3e52; color: white; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #8aadf4, #f5a97f); border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 15px; transition: transform 0.2s; }
-        button:hover { transform: scale(1.02); }
-        .note { font-size: 0.8em; color: #a5adcb; text-align: center; margin-top: 15px; }
+        body {
+            background-color: #0b0c15; /* Fallback */
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        h1, h2, h3, button, .brand-font, .nav-item {
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        /* Canvas Background - Fixed to ensure visibility */
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #1a1c2e 0%, #000000 100%);
+        }
+
+        /* Glassmorphism Card */
+        .glass-card {
+            background: rgba(18, 22, 41, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .input-box {
+            background: rgba(10, 10, 15, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+        
+        .input-box:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+            outline: none;
+            background: rgba(15, 15, 25, 0.9);
+        }
+
+        /* Toggle Switch */
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #6366f1;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #6366f1;
+        }
+        
+        /* Modal Animation */
+        .modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.95);
+        }
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: scale(1);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 50%;
+            border-top: 2px solid #fff;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Wizard Slide Transitions */
+        .slide {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .slide.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Tab Navigation */
+        .nav-item {
+            cursor: pointer;
+            padding-bottom: 2px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+            opacity: 0.6;
+        }
+        .nav-item.active {
+            border-bottom-color: #6366f1;
+            opacity: 1;
+            color: #fff;
+        }
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
 
-<div class="card">
-    <h1>🤖 AI Bot Creator</h1>
-    <p style="text-align:center; color:#cad3f5;">Create a 24/7 Bot in 1 Click</p>
-    
-    <input type="text" id="token" placeholder="Discord Bot Token" required>
-    <input type="text" id="groq" placeholder="Groq API Key (gsk_...)" required>
-    <input type="text" id="name" placeholder="Character Name (e.g. Viper)" required>
-    <textarea id="prompt" rows="3" placeholder="Personality (e.g. Sarcastic, rude...)"></textarea>
+    <!-- CANVAS BACKGROUND -->
+    <canvas id="canvas-bg"></canvas>
 
-    <button onclick="generateBot()">DOWNLOAD BOT (.ZIP)</button>
-    <p class="note">Next Step: Upload this ZIP to <a href="https://discloudbot.com" target="_blank" style="color:#8aadf4;">Discloud</a></p>
-</div>
+    <div class="glass-card max-w-6xl w-full rounded-3xl overflow-hidden relative mt-4 border-t border-white/10 min-h-[800px] flex flex-col z-10">
+        
+        <!-- NAVIGATION BAR -->
+        <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-black/20">
+            <div class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-indigo-500">AGTOP</span> GENERATOR
+            </div>
+            <div class="flex gap-8 text-sm font-semibold tracking-wide">
+                <div class="nav-item active" onclick="switchTab('home')">HOME</div>
+                <div class="nav-item" onclick="switchTab('docs')">DOCS</div>
+                <div class="nav-item" onclick="switchTab('support')">SUPPORT CREATOR</div>
+                <div class="nav-item" onclick="switchTab('get-support')">GET SUPPORT</div>
+            </div>
+        </div>
 
-<script>
-    function generateBot() {
-        const token = document.getElementById('token').value;
-        const groq = document.getElementById('groq').value;
-        const name = document.getElementById('name').value;
-        const prompt = document.getElementById('prompt').value;
+        <!-- TAB: HOME (Generator) -->
+        <div id="home-content" class="tab-content active flex-1">
+            <div class="p-8 md:p-12 h-full flex flex-col">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-3 drop-shadow-lg">DESIGN YOUR COMPANION</h1>
+                    <p class="text-gray-400 font-normal text-lg max-w-2xl mx-auto">Configure your neural network using the wizard below.</p>
+                </div>
 
-        if(!token || !groq) { alert("Please enter your keys!"); return; }
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 flex-1">
+                    
+                    <!-- LEFT COLUMN: System Configuration -->
+                    <div class="space-y-8 bg-black/10 p-6 rounded-2xl border border-white/5 h-fit">
+                        <div class="flex items-center gap-3 border-b border-gray-700 pb-4">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white">1</div>
+                            <h3 class="text-xl font-bold text-white tracking-tight">System Access</h3>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-xs text-indigo-300 font-bold mb-2 uppercase tracking-wider ml-1">Discord Bot Token</label>
+                                <input type="password" id="discordToken" class="w-full p-4 rounded-xl input-box text-white placeholder-gray-600" placeholder="Paste your Token here" required>
+                                <a href="https://discord.com/developers/applications" target="_blank" class="text-[10px] text-gray-500 hover:text-indigo-400 mt-1 block ml-1 transition">Get your token at Discord Developer Portal &nearr;</a>
+                            </div>
 
-        const zip = new JSZip();
+                            <div>
+                                <label class="block text-xs text-indigo-300 font-bold mb-2 uppercase tracking-wider ml-1">Groq API Key</label>
+                                <input type="password" id="groqKey" class="w-full p-4 rounded-xl input-box text-white placeholder-gray-600" placeholder="Paste gsk_... key here" required>
+                                <a href="https://console.groq.com/keys" target="_blank" class="text-[10px] text-gray-500 hover:text-indigo-400 mt-1 block ml-1 transition">Get your key at Groq Console &nearr;</a>
+                            </div>
 
-        // 1. Create main.py
-        const pythonCode = `import discord
+                            <!-- NSFW Toggle -->
+                            <div class="bg-gray-800/30 p-5 rounded-xl border border-gray-700/50 hover:bg-gray-800/50 transition duration-300">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="text-white font-bold text-sm">NSFW Logic Layer</h3>
+                                        <p class="text-xs text-gray-400 mt-1">Disables safety filters. <span class="text-red-400">Requires Age-Restricted channel.</span></p>
+                                    </div>
+                                    <div class="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in">
+                                        <input type="checkbox" name="toggle" id="nsfwToggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                        <label for="nsfwToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Neural Identity (Wizard) -->
+                    <div class="space-y-8 flex flex-col h-full">
+                        <div class="flex items-center gap-3 border-b border-gray-700 pb-4">
+                            <div class="w-8 h-8 rounded-lg bg-pink-600 flex items-center justify-center font-bold text-white">2</div>
+                            <h3 class="text-xl font-bold text-white tracking-tight">Neural Identity</h3>
+                            <div class="ml-auto text-xs text-gray-500 font-mono" id="step-indicator">Step 1/4</div>
+                        </div>
+                        
+                        <!-- AI Tool (Always Visible) -->
+                        <div class="bg-gradient-to-r from-indigo-900/30 to-purple-900/30 p-1 rounded-xl mb-2">
+                            <div class="bg-gray-900/80 p-4 rounded-lg backdrop-blur-sm">
+                                <label class="block text-xs text-indigo-300 mb-2 font-bold uppercase tracking-wider flex justify-between">
+                                    <span>AI Architect</span>
+                                    <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-400 hover:text-white transition cursor-pointer">Get Gemini Key &nearr;</a>
+                                </label>
+                                <input type="password" id="geminiKey" class="w-full p-2 mb-2 rounded-lg input-box text-white text-xs border-indigo-500/20" placeholder="Paste Gemini Key to unlock Auto-Fill">
+                                <div class="flex gap-3">
+                                    <input type="text" id="aiTheme" class="w-full p-3 rounded-lg input-box text-white text-sm placeholder-gray-500" placeholder="Theme: e.g. Grumpy Wizard...">
+                                    <button onclick="generateCharacterWithGemini()" id="genBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition flex items-center shadow-lg shadow-indigo-500/20">
+                                        ✨ Auto-Fill
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- WIZARD SLIDES -->
+                        <div class="flex-1 relative min-h-[300px]">
+                            
+                            <!-- Slide 1: Basic Info -->
+                            <div class="slide active" id="slide-1">
+                                <div class="space-y-5">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Name</label>
+                                        <input type="text" id="charName" class="w-full p-3 rounded-lg input-box text-white" placeholder="Viper" value="Viper">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Age</label>
+                                        <input type="text" id="charAge" class="w-full p-3 rounded-lg input-box text-white" placeholder="24" value="24">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 2: Backstory -->
+                            <div class="slide" id="slide-2">
+                                <div class="space-y-5">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Origin Story</label>
+                                        <input type="text" id="charOrigin" class="w-full p-3 rounded-lg input-box text-white" placeholder="Cyberpunk Slums..." value="Cyberpunk Slums of Neo-Tokyo">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Physical Appearance</label>
+                                        <textarea id="charAppearance" rows="4" class="w-full p-3 rounded-lg input-box text-white placeholder-gray-600">Tall, neon-green hair, robotic left arm.</textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 3: Personality -->
+                            <div class="slide" id="slide-3">
+                                <div class="space-y-5">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Personality Matrix</label>
+                                        <textarea id="charPersonality" rows="3" class="w-full p-3 rounded-lg input-box text-white placeholder-gray-600">Sarcastic, confident, and a bit flirtatious.</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2 ml-1">Writing Style / Tone</label>
+                                        <input type="text" id="charStyle" class="w-full p-3 rounded-lg input-box text-white" placeholder="e.g. Uses slang, Old English, Very polite..." value="Uses cyberpunk slang, short sentences.">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 4: Interests -->
+                            <div class="slide" id="slide-4">
+                                <div class="space-y-5">
+                                    <div class="grid grid-cols-2 gap-5">
+                                        <div>
+                                            <label class="block text-xs text-gray-400 mb-2 ml-1">Likes</label>
+                                            <textarea id="charLikes" rows="5" class="w-full p-3 rounded-lg input-box text-white">Hacking, spicy ramen, rain</textarea>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs text-gray-400 mb-2 ml-1">Dislikes</label>
+                                            <textarea id="charDislikes" rows="5" class="w-full p-3 rounded-lg input-box text-white">Police, rules, lag</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Wizard Navigation -->
+                        <div class="flex justify-between pt-4 border-t border-gray-800">
+                            <button onclick="prevSlide()" id="prevBtn" class="text-gray-500 hover:text-white px-4 py-2 text-sm font-bold transition disabled:opacity-0" disabled>
+                                &larr; BACK
+                            </button>
+                            <button onclick="nextSlide()" id="nextBtn" class="bg-white text-black hover:bg-indigo-500 hover:text-white px-6 py-2 rounded-lg text-sm font-bold transition shadow-lg shadow-white/10">
+                                NEXT &rarr;
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: DOCS -->
+        <div id="docs-content" class="tab-content flex-1 p-12 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-white mb-6">Documentation</h2>
+            <div class="space-y-8 text-gray-300 leading-relaxed max-w-4xl">
+                
+                <div class="bg-black/20 p-8 rounded-2xl border border-white/5">
+                    <h3 class="text-xl text-indigo-400 font-bold mb-4 flex items-center gap-2">
+                        <span class="bg-indigo-500/20 p-1 rounded">1</span> Getting Access Keys
+                    </h3>
+                    <div class="space-y-4 text-sm">
+                        <p>To make the bot work, you need two free keys:</p>
+                        <ul class="list-disc ml-6 space-y-2">
+                            <li>
+                                <strong class="text-white">Discord Bot Token:</strong> Go to the <a href="https://discord.com/developers/applications" target="_blank" class="text-indigo-400 hover:underline">Discord Developer Portal</a>. Create a new Application > Click 'Bot' > Click 'Reset Token'. 
+                                <br><span class="text-xs text-gray-500">IMPORTANT: Scroll down and enable "Message Content Intent" switch!</span>
+                            </li>
+                            <li>
+                                <strong class="text-white">Groq API Key:</strong> Go to <a href="https://console.groq.com/keys" target="_blank" class="text-indigo-400 hover:underline">Groq Cloud</a>. Create a free account and generate a new API Key. This powers the Llama 3 brain.
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-8 rounded-2xl border border-white/5">
+                    <h3 class="text-xl text-indigo-400 font-bold mb-4 flex items-center gap-2">
+                        <span class="bg-indigo-500/20 p-1 rounded">2</span> Hosting Guide
+                    </h3>
+                    <p class="mb-4">Once you click <b>FINISH</b> on the Home tab, you will download a ZIP file. You need to host this file to keep the bot online.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                            <h4 class="font-bold text-white">Option A: FPS.ms (Easiest)</h4>
+                            <p class="text-xs mt-2">1. Go to fps.ms and create a Python server.</p>
+                            <p class="text-xs mt-1">2. Upload the ZIP file to the "Files" tab.</p>
+                            <p class="text-xs mt-1">3. Right-click and "Unarchive" (Unzip).</p>
+                            <p class="text-xs mt-1">4. Click Start in Console.</p>
+                        </div>
+                        <div class="bg-gray-900/50 p-4 rounded-lg border border-gray-700">
+                            <h4 class="font-bold text-white">Option B: Koyeb (Best)</h4>
+                            <p class="text-xs mt-2">1. Create a GitHub repo and upload the files.</p>
+                            <p class="text-xs mt-1">2. Connect Koyeb to your GitHub.</p>
+                            <p class="text-xs mt-1">3. Use "Dockerfile" or "Buildpack" builder.</p>
+                            <p class="text-xs mt-1">4. Deploy.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-black/20 p-8 rounded-2xl border border-white/5">
+                    <h3 class="text-xl text-indigo-400 font-bold mb-4 flex items-center gap-2">
+                        <span class="bg-indigo-500/20 p-1 rounded">3</span> Troubleshooting
+                    </h3>
+                    <ul class="list-disc ml-6 space-y-2 text-sm">
+                        <li><b>Improper Token:</b> You pasted the wrong Discord Token. Reset it in the dev portal.</li>
+                        <li><b>404 Model Error:</b> The AI model name changed. This generator uses the latest Llama 3.1.</li>
+                        <li><b>Bot Not Replying:</b> Did you enable "Message Content Intent" in Discord Dev Portal?</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SUPPORT CREATOR -->
+        <div id="support-content" class="tab-content flex-1 p-12 flex flex-col items-center justify-center text-center">
+            <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" class="w-24 h-24 mb-6 rounded-full border-4 border-indigo-500 shadow-xl">
+            <h2 class="text-4xl font-bold text-white mb-4">Support AGTOP</h2>
+            <p class="text-xl text-gray-400 mb-8 max-w-lg">Creating free tools takes time and coffee. If this tool helped you, please consider subscribing to the channel!</p>
+            <a href="https://www.youtube.com/@agtop302" target="_blank" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-xl text-xl flex items-center gap-3 transition hover:scale-105 shadow-lg shadow-red-600/30">
+                <!-- Filled YouTube Icon -->
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
+                Subscribe on YouTube
+            </a>
+        </div>
+
+        <!-- TAB: GET SUPPORT -->
+        <div id="get-support-content" class="tab-content flex-1 p-12 flex flex-col items-center justify-center text-center">
+            <div class="w-24 h-24 mb-6 rounded-full bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-500/30">
+                <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.419-2.1568 2.419z"/></svg>
+            </div>
+            <h2 class="text-4xl font-bold text-white mb-4">Need Help?</h2>
+            <p class="text-xl text-gray-400 mb-8 max-w-lg">Join our Discord community to get help with installation, errors, or hosting questions.</p>
+            <a href="https://discord.gg/rryv9xSAKu" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl text-xl flex items-center gap-3 transition hover:scale-105">
+                Join Discord Server
+            </a>
+        </div>
+    </div>
+
+    <!-- POPUP MODAL -->
+    <div id="subModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 modal backdrop-blur-md">
+        <div class="bg-[#1e293b] border border-gray-600 p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl relative">
+            <div class="absolute -top-12 left-1/2 transform -translate-x-1/2">
+                <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" class="w-24 h-24 drop-shadow-2xl rounded-full border-4 border-[#1e293b]">
+            </div>
+            
+            <h3 class="text-2xl font-bold text-white mt-8 mb-2 font-montserrat">Support the Creator</h3>
+            <p class="text-gray-400 text-sm mb-8 leading-relaxed">Subscribe to <b class="text-white">AGTOP</b> on YouTube!</p>
+            
+            <div class="flex flex-col gap-3">
+                <button onclick="handleSubscribe()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition shadow-lg shadow-red-600/20">
+                    <!-- Filled YouTube Icon -->
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    Subscribe Now
+                </button>
+                <button onclick="handleSkip()" class="text-gray-500 hover:text-white text-sm mt-2 transition hover:underline">
+                    No thanks, just download >
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed top-5 right-5 bg-indigo-600 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex items-center gap-3 border border-white/10 backdrop-blur-md font-medium">
+        <span>Operation Successful</span>
+    </div>
+
+    <script>
+        // --- TAB & WIZARD LOGIC ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`${tabName}-content`).classList.add('active');
+            
+            const navs = document.querySelectorAll('.nav-item');
+            if(tabName === 'home') navs[0].classList.add('active');
+            if(tabName === 'docs') navs[1].classList.add('active');
+            if(tabName === 'support') navs[2].classList.add('active');
+            if(tabName === 'get-support') navs[3].classList.add('active');
+        }
+
+        let currentSlide = 1;
+        const totalSlides = 4;
+
+        function updateWizard() {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${currentSlide}`).classList.add('active');
+            
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            prevBtn.disabled = currentSlide === 1;
+            prevBtn.style.opacity = currentSlide === 1 ? '0' : '1';
+            
+            // Logic for FINISH button
+            if (currentSlide === totalSlides) {
+                nextBtn.innerHTML = 'FINISH & DOWNLOAD';
+                nextBtn.classList.remove('bg-white', 'text-black');
+                nextBtn.classList.add('bg-indigo-600', 'text-white');
+                nextBtn.onclick = showSubscribeModal; // Triggers download
+            } else {
+                nextBtn.innerHTML = 'NEXT &rarr;';
+                nextBtn.classList.add('bg-white', 'text-black');
+                nextBtn.classList.remove('bg-indigo-600', 'text-white');
+                nextBtn.onclick = nextSlide;
+            }
+
+            document.getElementById('step-indicator').innerText = `Step ${currentSlide}/${totalSlides}`;
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                currentSlide++;
+                updateWizard();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                currentSlide--;
+                updateWizard();
+            }
+        }
+
+        // --- ANIMATION LOGIC ---
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let mouse = { x: null, y: null };
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.color = `rgba(${Math.random() > 0.5 ? '99, 102, 241' : '165, 180, 252'}, ${Math.random() * 0.5 + 0.1})`;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (mouse.x) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        const force = (100 - distance) / 100;
+                        this.x -= (dx/distance) * force * 0.5;
+                        this.y -= (dy/distance) * force * 0.5;
+                        this.size = 3;
+                    } else {
+                        if (this.size > 2) this.size -= 0.1;
+                    }
+                }
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const numberOfParticles = (canvas.width * canvas.height) / 9000;
+            for (let i = 0; i < numberOfParticles; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function connect() {
+            for (let a = 0; a < particles.length; a++) {
+                for (let b = a; b < particles.length; b++) {
+                    const dx = particles[a].x - particles[b].x;
+                    const dy = particles[a].y - particles[b].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < 100) {
+                        ctx.strokeStyle = `rgba(99, 102, 241, ${0.1 - distance/1000})`;
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[a].x, particles[a].y);
+                        ctx.lineTo(particles[b].x, particles[b].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            connect();
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
+
+        // --- GEMINI & GENERATION ---
+        async function generateCharacterWithGemini() {
+            const geminiKey = document.getElementById('geminiKey').value;
+            const theme = document.getElementById('aiTheme').value;
+            const btn = document.getElementById('genBtn');
+
+            if (!geminiKey) { showToast("Please enter a Gemini API Key first!", true); return; }
+            if (!theme) { showToast("Please enter a character theme!", true); return; }
+
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="loader"></div> Generating...';
+            btn.disabled = true;
+
+            const prompt = `Generate a fictional character profile based on the theme: "${theme}". 
+            Return ONLY a valid JSON object with no markdown. The keys must be: 
+            name, age, origin, appearance, personality, style, likes, dislikes.
+            Note: 'style' key should describe their speaking style (e.g. 'Uses slang', 'Formal').
+            Make it creative and detailed.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+
+                const data = await response.json();
+                if (data.error) throw new Error(data.error.message);
+
+                let text = data.candidates[0].content.parts[0].text;
+                text = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const profile = JSON.parse(text);
+
+                document.getElementById('charName').value = profile.name;
+                document.getElementById('charAge').value = profile.age;
+                document.getElementById('charOrigin').value = profile.origin;
+                document.getElementById('charAppearance').value = profile.appearance;
+                document.getElementById('charPersonality').value = profile.personality;
+                if(profile.style) document.getElementById('charStyle').value = profile.style;
+                document.getElementById('charLikes').value = Array.isArray(profile.likes) ? profile.likes.join(', ') : profile.likes;
+                document.getElementById('charDislikes').value = Array.isArray(profile.dislikes) ? profile.dislikes.join(', ') : profile.dislikes;
+
+                showToast("✨ Character Generated Successfully!");
+
+            } catch (error) {
+                console.error(error);
+                showToast("Error: " + error.message, true);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.innerText = message;
+            toast.className = `fixed top-5 right-5 px-6 py-4 rounded-xl shadow-2xl transform transition-transform duration-300 z-50 flex items-center gap-3 border border-white/10 backdrop-blur-md font-medium ${isError ? 'bg-red-600/90' : 'bg-indigo-600/90'} text-white`;
+            requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+            setTimeout(() => toast.classList.add('translate-x-full'), 3000);
+        }
+
+        const modal = document.getElementById('subModal');
+
+        function showSubscribeModal() {
+            const token = document.getElementById('discordToken').value;
+            const groq = document.getElementById('groqKey').value;
+            if(!token || !groq) {
+                showToast("Please enter your Discord Token and Groq Key first!", true);
+                return;
+            }
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('active'), 10);
+        }
+
+        function handleSubscribe() {
+            window.open('https://www.youtube.com/@agtop302?sub_confirmation=1', '_blank');
+            setTimeout(() => {
+                modal.classList.remove('active');
+                setTimeout(() => modal.classList.add('hidden'), 300);
+                generateBot();
+            }, 2000);
+        }
+
+        function handleSkip() {
+            modal.classList.remove('active');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+            generateBot();
+        }
+
+        function generateBot() {
+            const token = document.getElementById('discordToken').value;
+            const groq = document.getElementById('groqKey').value;
+            
+            const char = {
+                name: document.getElementById('charName').value,
+                age: document.getElementById('charAge').value,
+                origin: document.getElementById('charOrigin').value,
+                appearance: document.getElementById('charAppearance').value,
+                personality: document.getElementById('charPersonality').value,
+                style: document.getElementById('charStyle').value,
+                likes: document.getElementById('charLikes').value,
+                dislikes: document.getElementById('charDislikes').value
+            };
+
+            const isNSFW = document.getElementById('nsfwToggle').checked;
+
+            const pythonCode = `import discord
 from openai import OpenAI
 import os
 
+# --- GENERATED CONFIGURATION ---
 DISCORD_TOKEN = "${token}"
 GROQ_API_KEY = "${groq}"
+
+# --- CHARACTER PROFILE ---
+CHAR_NAME = "${char.name}"
+CHAR_DETAILS = """
+- Age: ${char.age}
+- Origin: ${char.origin}
+- Appearance: ${char.appearance}
+- Personality: ${char.personality}
+- Writing Style: ${char.style}
+- Likes: ${char.likes}
+- Dislikes: ${char.dislikes}
+"""
+
+# --- SYSTEM PROMPT ---
+${isNSFW ? '# NSFW MODE ENABLED' : '# SAFE MODE ENABLED'}
+SYSTEM_PROMPT = f"""
+You are roleplaying as {CHAR_NAME}.
+{CHAR_DETAILS}
+
+IMPORTANT RULES:
+1. Stay in character. You are NOT an AI.
+2. Keep replies SHORT (1-2 sentences). Speak in the defined Writing Style.
+3. ${isNSFW ? 'You are UNFILTERED. You can use adult/NSFW themes if the context fits.' : 'Keep conversation PG-13 and safe.'}
+"""
+
+print(f"--- STARTING BOT: {CHAR_NAME} ---")
 
 client_ai = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
-
-SYSTEM_PROMPT = "You are ${name}. ${prompt}. Keep answers short."
 chat_history = []
 
 @client.event
@@ -66,7 +729,7 @@ async def on_message(message):
     if message.author == client.user: return
     try:
         chat_history.append({"role": "user", "content": message.content})
-        if len(chat_history) > 10: chat_history.pop(0)
+        if len(chat_history) > 15: chat_history.pop(0)
         
         payload = [{"role": "system", "content": SYSTEM_PROMPT}] + chat_history
         response = client_ai.chat.completions.create(model="llama-3.1-8b-instant", messages=payload)
@@ -75,30 +738,20 @@ async def on_message(message):
         chat_history.append({"role": "assistant", "content": reply})
         await message.channel.send(reply)
     except Exception as e:
-        print(e)
+        print(f"Error: {e}")
 
 client.run(DISCORD_TOKEN)`;
 
-        // 2. Create requirements.txt (Required for hosting)
-        zip.file("main.py", pythonCode);
-        zip.file("requirements.txt", "discord.py\nopenai");
-
-        // 3. Create discloud.config (Required for 24/7 hosting)
-        const discloudConfig = `NAME=${name}Bot
-TYPE=bot
-MAIN=main.py
-RAM=100
-AUTORESTART=true
-VERSION=latest
-APT=tools`;
-        zip.file("discloud.config", discloudConfig);
-
-        // 4. Generate and Download
-        zip.generateAsync({type:"blob"}).then(function(content) {
-            saveAs(content, `${name}_Bot.zip`);
-        });
-    }
-</script>
-
+            const zip = new JSZip();
+            zip.file("main.py", pythonCode);
+            zip.file("requirements.txt", "discord.py\nopenai");
+            
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                saveAs(content, `${char.name}_Bot.zip`);
+            });
+            
+            showToast("Bot Generated & Downloaded!");
+        }
+    </script>
 </body>
 </html>

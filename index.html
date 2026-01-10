@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Free AI Bot Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <style>
+        body { background-color: #0f0f16; color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e1e2e; padding: 40px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); width: 400px; }
+        h1 { color: #8aadf4; text-align: center; margin-bottom: 20px; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #27293a; border: 1px solid #3b3e52; color: white; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; background: linear-gradient(45deg, #8aadf4, #f5a97f); border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 15px; transition: transform 0.2s; }
+        button:hover { transform: scale(1.02); }
+        .note { font-size: 0.8em; color: #a5adcb; text-align: center; margin-top: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🤖 AI Bot Creator</h1>
+    <p style="text-align:center; color:#cad3f5;">Create a 24/7 Bot in 1 Click</p>
+    
+    <input type="text" id="token" placeholder="Discord Bot Token" required>
+    <input type="text" id="groq" placeholder="Groq API Key (gsk_...)" required>
+    <input type="text" id="name" placeholder="Character Name (e.g. Viper)" required>
+    <textarea id="prompt" rows="3" placeholder="Personality (e.g. Sarcastic, rude...)"></textarea>
+
+    <button onclick="generateBot()">DOWNLOAD BOT (.ZIP)</button>
+    <p class="note">Next Step: Upload this ZIP to <a href="https://discloudbot.com" target="_blank" style="color:#8aadf4;">Discloud</a></p>
+</div>
+
+<script>
+    function generateBot() {
+        const token = document.getElementById('token').value;
+        const groq = document.getElementById('groq').value;
+        const name = document.getElementById('name').value;
+        const prompt = document.getElementById('prompt').value;
+
+        if(!token || !groq) { alert("Please enter your keys!"); return; }
+
+        const zip = new JSZip();
+
+        // 1. Create main.py
+        const pythonCode = `import discord
+from openai import OpenAI
+import os
+
+DISCORD_TOKEN = "${token}"
+GROQ_API_KEY = "${groq}"
+
+client_ai = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=GROQ_API_KEY)
+intents = discord.Intents.default()
+intents.message_content = True
+client = discord.Client(intents=intents)
+
+SYSTEM_PROMPT = "You are ${name}. ${prompt}. Keep answers short."
+chat_history = []
+
+@client.event
+async def on_ready():
+    print(f'Logged in as {client.user}')
+
+@client.event
+async def on_message(message):
+    if message.author == client.user: return
+    try:
+        chat_history.append({"role": "user", "content": message.content})
+        if len(chat_history) > 10: chat_history.pop(0)
+        
+        payload = [{"role": "system", "content": SYSTEM_PROMPT}] + chat_history
+        response = client_ai.chat.completions.create(model="llama-3.1-8b-instant", messages=payload)
+        reply = response.choices[0].message.content
+        
+        chat_history.append({"role": "assistant", "content": reply})
+        await message.channel.send(reply)
+    except Exception as e:
+        print(e)
+
+client.run(DISCORD_TOKEN)`;
+
+        // 2. Create requirements.txt (Required for hosting)
+        zip.file("main.py", pythonCode);
+        zip.file("requirements.txt", "discord.py\nopenai");
+
+        // 3. Create discloud.config (Required for 24/7 hosting)
+        const discloudConfig = `NAME=${name}Bot
+TYPE=bot
+MAIN=main.py
+RAM=100
+AUTORESTART=true
+VERSION=latest
+APT=tools`;
+        zip.file("discloud.config", discloudConfig);
+
+        // 4. Generate and Download
+        zip.generateAsync({type:"blob"}).then(function(content) {
+            saveAs(content, `${name}_Bot.zip`);
+        });
+    }
+</script>
+
+</body>
+</html>

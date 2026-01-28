@@ -1,1 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGTOP - AI Bot Generator & Feedback</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+    <style>
+        body { background-color: #0b0c15; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow-x: hidden; position: relative; }
+        h1, h2, h3, button, .brand-font, .nav-item { font-family: 'Montserrat', sans-serif; }
+        #canvas-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(circle at center, #1a1c2e 0%, #000000 100%); }
+        .glass-card { background: rgba(18, 22, 41, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .input-box { background: rgba(10, 10, 15, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; font-weight: 400; }
+        .input-box:focus { border-color: #818cf8; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15); outline: none; background: rgba(15, 15, 25, 0.9); }
+        .nav-item { cursor: pointer; padding-bottom: 2px; border-bottom: 2px solid transparent; transition: all 0.3s; opacity: 0.6; }
+        .nav-item.active { border-bottom-color: #6366f1; opacity: 1; color: #fff; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        .slide { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .slide.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .loader { border: 2px solid rgba(255,255,255,0.1); border-radius: 50%; border-top: 2px solid #fff; width: 16px; height: 16px; animation: spin 0.8s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .modal { transition: opacity 0.3s ease, transform 0.3s ease; opacity: 0; pointer-events: none; transform: scale(0.95); }
+        .modal.active { opacity: 1; pointer-events: auto; transform: scale(1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <canvas id="canvas-bg"></canvas>
+
+    <div class="glass-card max-w-6xl w-full rounded-3xl overflow-hidden relative mt-4 border-t border-white/10 min-h-[800px] flex flex-col z-10">
+        
+        <div class="flex items-center justify-between px-8 py-6 border-b border-white/5 bg-black/20">
+            <div class="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-indigo-500">AGTOP</span> GENERATOR
+            </div>
+            <div class="flex gap-8 text-sm font-semibold tracking-wide">
+                <div class="nav-item active" onclick="switchTab('home')">HOME</div>
+                <div id="feedback-nav" class="nav-item" onclick="switchTab('feedback')">FEEDBACK</div>
+                <div class="nav-item" onclick="switchTab('docs')">DOCS</div>
+                <div class="nav-item" onclick="switchTab('support')">SUPPORT</div>
+            </div>
+        </div>
+
+        <div id="home-content" class="tab-content active flex-1">
+            <div class="p-8 md:p-12 h-full flex flex-col">
+                <div class="text-center mb-10">
+                    <h1 class="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-3">DESIGN YOUR COMPANION</h1>
+                    <p class="text-gray-400 text-lg">Configure your neural network using the wizard below.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 flex-1">
+                    <div class="space-y-8 bg-black/10 p-6 rounded-2xl border border-white/5 h-fit">
+                        <div class="flex items-center gap-3 border-b border-gray-700 pb-4">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white">1</div>
+                            <h3 class="text-xl font-bold text-white">System Access</h3>
+                        </div>
+                        <div class="space-y-6">
+                            <input type="password" id="discordToken" class="w-full p-4 rounded-xl input-box text-white" placeholder="Discord Bot Token">
+                            <input type="password" id="groqKey" class="w-full p-4 rounded-xl input-box text-white" placeholder="Groq API Key">
+                            <div class="bg-gray-800/30 p-5 rounded-xl border border-gray-700/50 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-white font-bold text-sm">NSFW Logic Layer</h3>
+                                    <p class="text-xs text-gray-400 mt-1">Disables safety filters.</p>
+                                </div>
+                                <input type="checkbox" id="nsfwToggle" class="w-6 h-6 rounded border-gray-700 bg-gray-900 checked:bg-indigo-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-8 flex flex-col h-full">
+                        <div class="flex items-center gap-3 border-b border-gray-700 pb-4">
+                            <div class="w-8 h-8 rounded-lg bg-pink-600 flex items-center justify-center font-bold text-white">2</div>
+                            <h3 class="text-xl font-bold text-white">Neural Identity</h3>
+                            <div class="ml-auto text-xs text-gray-500 font-mono" id="step-indicator">Step 1/4</div>
+                        </div>
+
+                        <div class="flex-1 relative min-h-[300px]">
+                            <div class="slide active" id="slide-1">
+                                <label class="block text-xs text-gray-400 mb-2">Character Name</label>
+                                <input type="text" id="charName" class="w-full p-3 rounded-lg input-box text-white mb-4" value="Viper">
+                                <label class="block text-xs text-gray-400 mb-2">Age</label>
+                                <input type="text" id="charAge" class="w-full p-3 rounded-lg input-box text-white" value="24">
+                            </div>
+                            <div class="slide" id="slide-2">
+                                <label class="block text-xs text-gray-400 mb-2">Origin Story</label>
+                                <input type="text" id="charOrigin" class="w-full p-3 rounded-lg input-box text-white mb-4" value="Cyberpunk Slums of Neo-Tokyo">
+                                <label class="block text-xs text-gray-400 mb-2">Physical Appearance</label>
+                                <textarea id="charAppearance" rows="3" class="w-full p-3 rounded-lg input-box text-white">Tall, neon-green hair, robotic left arm.</textarea>
+                            </div>
+                            <div class="slide" id="slide-3">
+                                <label class="block text-xs text-gray-400 mb-2">Personality</label>
+                                <textarea id="charPersonality" rows="3" class="w-full p-3 rounded-lg input-box text-white">Sarcastic, confident, and a bit flirtatious.</textarea>
+                                <label class="block text-xs text-gray-400 mb-2">Writing Tone</label>
+                                <input type="text" id="charStyle" class="w-full p-3 rounded-lg input-box text-white" value="Uses cyberpunk slang, short sentences.">
+                            </div>
+                            <div class="slide" id="slide-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2">Likes</label>
+                                        <textarea id="charLikes" rows="5" class="w-full p-3 rounded-lg input-box text-white">Hacking, spicy ramen, rain</textarea>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-400 mb-2">Dislikes</label>
+                                        <textarea id="charDislikes" rows="5" class="w-full p-3 rounded-lg input-box text-white">Police, rules, lag</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between pt-4 border-t border-gray-800">
+                            <button onclick="prevSlide()" id="prevBtn" class="text-gray-500 hover:text-white px-4 py-2 text-sm font-bold disabled:opacity-0" disabled>BACK</button>
+                            <button onclick="nextSlide()" id="nextBtn" class="bg-white text-black hover:bg-indigo-500 hover:text-white px-6 py-2 rounded-lg text-sm font-bold transition">NEXT &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="feedback-content" class="tab-content flex-1 p-12">
+            <div class="max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold text-white mb-2">Community Feedback</h2>
+                <p class="text-gray-400 mb-8 text-sm italic">One comment per person. Approved "cool" comments appear here.</p>
+                
+                <div id="auth-section" class="mb-8 p-8 bg-indigo-900/20 border border-indigo-500/30 rounded-2xl text-center">
+                    <p class="text-gray-300 mb-4">Sign in to leave a review</p>
+                    <button onclick="signIn()" class="bg-indigo-600 px-8 py-3 rounded-xl font-bold hover:scale-105 transition shadow-lg shadow-indigo-500/20">Sign in with Discord</button>
+                </div>
+
+                <div id="comment-form" class="hidden mb-10 space-y-4">
+                    <div class="flex items-center gap-3 mb-2">
+                        <img id="userAvatar" class="w-10 h-10 rounded-full border-2 border-indigo-500" src="">
+                        <span id="userNameDisplay" class="text-sm font-bold text-indigo-300"></span>
+                    </div>
+                    <textarea id="userComment" rows="3" maxlength="250" class="w-full p-4 rounded-xl input-box text-white border-indigo-500/20" placeholder="Write your thoughts..."></textarea>
+                    <button onclick="submitComment()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-indigo-500 hover:text-white transition">Submit Review</button>
+                </div>
+
+                <div id="comments-list" class="space-y-4">
+                    </div>
+            </div>
+        </div>
+
+        <div id="docs-content" class="tab-content flex-1 p-12 overflow-y-auto">
+            <h2 class="text-3xl font-bold text-white mb-6">Documentation</h2>
+            <div class="space-y-6 text-gray-300 text-sm">
+                <div class="bg-black/20 p-6 rounded-xl border border-white/5">
+                    <h4 class="font-bold text-indigo-400 mb-2">Step 1: Discord Setup</h4>
+                    <p>Enable 'Message Content Intent' in the Discord Developer Portal.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="support-content" class="tab-content flex-1 p-12 flex flex-col items-center justify-center text-center">
+            <h2 class="text-4xl font-bold text-white mb-4">Support AGTOP</h2>
+            <a href="https://www.youtube.com/@agtop302" target="_blank" class="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-xl transition shadow-lg shadow-red-600/30">Subscribe on YouTube</a>
+        </div>
+    </div>
+
+    <div id="subModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 modal backdrop-blur-md hidden">
+        <div class="bg-[#1e293b] p-8 rounded-2xl max-w-sm w-full text-center">
+            <h3 class="text-2xl font-bold text-white mb-4">Support the Creator</h3>
+            <p class="text-gray-400 text-sm mb-8">Subscribe to AGTOP on YouTube before downloading!</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="handleSubscribe()" class="bg-red-600 py-3 rounded-xl font-bold">Subscribe Now</button>
+                <button onclick="handleSkip()" class="text-gray-500 text-sm">Skip to Download</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="fixed top-5 right-5 px-6 py-4 rounded-xl shadow-2xl transform translate-x-full transition-transform duration-300 z-50 bg-indigo-600 text-white font-medium"></div>
+
+    <script>
+        // --- CONFIGURATION: REPLACE THESE ---
+        const supabaseUrl = 'YOUR_SUPABASE_URL';
+        const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // --- GLOBAL LOGIC ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById(`${tabName}-content`).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if(tabName === 'feedback') loadComments();
+        }
+
+        let currentSlide = 1;
+        function updateWizard() {
+            document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+            document.getElementById(`slide-${currentSlide}`).classList.add('active');
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            prevBtn.disabled = currentSlide === 1;
+            prevBtn.style.opacity = currentSlide === 1 ? '0' : '1';
+            if (currentSlide === 4) {
+                nextBtn.innerHTML = 'FINISH & DOWNLOAD';
+                nextBtn.onclick = showSubscribeModal;
+            } else {
+                nextBtn.innerHTML = 'NEXT &rarr;';
+                nextBtn.onclick = nextSlide;
+            }
+            document.getElementById('step-indicator').innerText = `Step ${currentSlide}/4`;
+        }
+        function nextSlide() { if(currentSlide < 4) { currentSlide++; updateWizard(); } }
+        function prevSlide() { if(currentSlide > 1) { currentSlide--; updateWizard(); } }
+
+        // --- FEEDBACK SYSTEM ---
+        async function signIn() { 
+            const { error } = await supabase.auth.signInWithOAuth({ provider: 'discord' }); 
+        }
+
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                document.getElementById('auth-section').classList.add('hidden');
+                document.getElementById('comment-form').classList.remove('hidden');
+                document.getElementById('userNameDisplay').innerText = user.user_metadata.full_name;
+                document.getElementById('userAvatar').src = user.user_metadata.avatar_url;
+            }
+        }
+
+        async function loadComments() {
+            const container = document.getElementById('comments-list');
+            container.innerHTML = '<div class="loader mx-auto block"></div>';
+            const { data } = await supabase.from('comments').select('*').eq('is_approved', true).order('created_at', {ascending:false});
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-gray-600 text-center">No "cool" reviews yet.</p>';
+                return;
+            }
+            container.innerHTML = data.map(c => `
+                <div class="bg-white/5 p-4 rounded-xl border border-white/10">
+                    <p class="text-indigo-400 text-[10px] font-bold uppercase tracking-widest mb-1">${c.user_name}</p>
+                    <p class="text-gray-200 text-sm">${c.content}</p>
+                </div>
+            `).join('');
+        }
+
+        async function submitComment() {
+            const { data: { user } } = await supabase.auth.getUser();
+            const content = document.getElementById('userComment').value.trim();
+            if(content.length < 5) return showToast("Too short!", true);
+            const { error } = await supabase.from('comments').insert([{ user_id: user.id, user_name: user.user_metadata.full_name, content: content }]);
+            if(error) showToast(error.code === '23505' ? "One comment only!" : "Error!", true);
+            else { showToast("Success! Waiting for approval."); document.getElementById('userComment').value = ''; }
+        }
+
+        // --- GENERATOR LOGIC ---
+        function showSubscribeModal() { 
+            const m = document.getElementById('subModal'); 
+            m.classList.remove('hidden'); 
+            setTimeout(() => m.classList.add('active'), 10); 
+        }
+        function handleSkip() { document.getElementById('subModal').classList.remove('active'); generateBot(); }
+        function handleSubscribe() { window.open('https://youtube.com/@agtop302?sub_confirmation=1','_blank'); handleSkip(); }
+
+        function generateBot() {
+            const token = document.getElementById('discordToken').value;
+            const groq = document.getElementById('groqKey').value;
+            if(!token || !groq) return showToast("Fill all keys!", true);
+            
+            const pythonCode = `import discord\n# ... (Rest of your original Python bot code logic) ...`;
+            const zip = new JSZip();
+            zip.file("main.py", pythonCode);
+            zip.file("requirements.txt", "discord.py\nopenai");
+            zip.generateAsync({type:"blob"}).then(c => { saveAs(c, "Bot.zip"); showToast("Downloaded!"); });
+        }
+
+        function showToast(m, err=false) {
+            const t = document.getElementById('toast');
+            t.innerText = m; t.style.background = err ? '#ef4444' : '#4f46e5';
+            t.classList.remove('translate-x-full');
+            setTimeout(() => t.classList.add('translate-x-full'), 3000);
+        }
+
+        // --- CANVAS BACKGROUND ---
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+        class Particle {
+            constructor() { this.x = Math.random()*canvas.width; this.y = Math.random()*canvas.height; this.size = Math.random()*2; this.speedX = Math.random()*0.5-0.25; this.speedY = Math.random()*0.5-0.25; }
+            update() { this.x += this.speedX; this.y += this.speedY; if(this.x>canvas.width)this.x=0; if(this.y>canvas.height)this.y=0; }
+            draw() { ctx.fillStyle = 'rgba(99,102,241,0.3)'; ctx.beginPath(); ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); }
+        }
+        for(let i=0; i<100; i++) particles.push(new Particle());
+        function animate() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.update(); p.draw();}); requestAnimationFrame(animate); }
+        animate();
+
+        // Initial check
+        checkUser();
+    </script>
+</body>
+</html>

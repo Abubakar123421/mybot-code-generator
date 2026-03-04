@@ -539,6 +539,164 @@
         }
         .btn-skip:hover { color: var(--text); }
 
+        /* ── VIDEO POPUP ── */
+        #video-popup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            z-index: 300;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+            animation: overlayIn 0.4s ease;
+        }
+        #video-popup-overlay.hidden {
+            animation: overlayOut 0.3s ease forwards;
+            pointer-events: none;
+        }
+        @keyframes overlayIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+        @keyframes overlayOut {
+            from { opacity: 1; } to { opacity: 0; }
+        }
+
+        .vp-card {
+            background: #0d0f1e;
+            border: 1px solid rgba(108,99,255,0.25);
+            border-radius: 22px;
+            width: 100%; max-width: 480px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7), 0 0 60px rgba(108,99,255,0.12);
+            animation: cardIn 0.45s cubic-bezier(0.34,1.56,0.64,1);
+        }
+        #video-popup-overlay.hidden .vp-card {
+            animation: cardOut 0.3s ease forwards;
+        }
+        @keyframes cardIn {
+            from { transform: scale(0.88) translateY(20px); opacity: 0; }
+            to   { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        @keyframes cardOut {
+            from { transform: scale(1); opacity: 1; }
+            to   { transform: scale(0.9) translateY(10px); opacity: 0; }
+        }
+
+        /* close button */
+        .vp-close {
+            position: absolute; top: 12px; right: 12px;
+            width: 32px; height: 32px; border-radius: 50%;
+            background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7); font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; z-index: 10;
+            transition: all 0.2s ease;
+            font-family: sans-serif; line-height: 1;
+        }
+        .vp-close:hover {
+            background: rgba(239,68,68,0.7); border-color: rgba(239,68,68,0.5);
+            color: #fff; transform: scale(1.1);
+        }
+
+        /* thumbnail area */
+        .vp-thumb {
+            position: relative; cursor: pointer;
+            overflow: hidden;
+        }
+        .vp-thumb img {
+            width: 100%; display: block;
+            transition: transform 0.4s ease;
+        }
+        .vp-thumb:hover img { transform: scale(1.03); }
+
+        /* red gradient bar on thumb */
+        .vp-thumb::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(to bottom, transparent 40%, rgba(13,15,30,0.9) 100%);
+            pointer-events: none;
+        }
+
+        /* NEW badge */
+        .vp-badge {
+            position: absolute; top: 14px; left: 14px; z-index: 5;
+            background: #ef4444; color: #fff;
+            font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 800;
+            padding: 4px 10px; border-radius: 5px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            box-shadow: 0 2px 10px rgba(239,68,68,0.5);
+            animation: badgePulse 2s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%, 100% { box-shadow: 0 2px 10px rgba(239,68,68,0.4); }
+            50% { box-shadow: 0 2px 20px rgba(239,68,68,0.7); }
+        }
+
+        /* play button overlay on thumb */
+        .vp-play-overlay {
+            position: absolute; inset: 0; z-index: 5;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity 0.25s;
+        }
+        .vp-thumb:hover .vp-play-overlay { opacity: 1; }
+        .vp-play-btn-big {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: rgba(239,68,68,0.9);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(239,68,68,0.5);
+            transform: scale(0.9); transition: transform 0.2s;
+        }
+        .vp-thumb:hover .vp-play-btn-big { transform: scale(1); }
+        .vp-play-btn-big svg { margin-left: 4px; }
+
+        /* body of popup */
+        .vp-body {
+            padding: 20px 22px 24px;
+        }
+        .vp-label {
+            font-size: 10px; font-weight: 700;
+            color: var(--accent2); letter-spacing: 1.2px;
+            text-transform: uppercase; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .vp-live-dot {
+            width: 6px; height: 6px; background: #ef4444;
+            border-radius: 50%; animation: badgePulse 1.5s infinite;
+        }
+        .vp-title {
+            font-family: 'Syne', sans-serif;
+            font-size: 17px; font-weight: 800;
+            color: #fff; line-height: 1.3; margin-bottom: 16px;
+            letter-spacing: -0.3px;
+        }
+
+        /* watch button */
+        .vp-watch-btn {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            border: none; border-radius: 12px;
+            color: #fff; font-family: 'Syne', sans-serif;
+            font-size: 14px; font-weight: 800;
+            cursor: pointer; letter-spacing: 0.3px;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 24px rgba(239,68,68,0.3);
+        }
+        .vp-watch-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 32px rgba(239,68,68,0.45);
+        }
+        .vp-watch-btn:active { transform: translateY(0); }
+
+        .vp-skip {
+            width: 100%; background: transparent; border: none;
+            color: var(--text-muted); font-size: 12px;
+            cursor: pointer; margin-top: 10px; padding: 6px;
+            transition: color 0.2s; font-family: 'DM Sans', sans-serif;
+        }
+        .vp-skip:hover { color: var(--text); }
+
         /* ── TOAST ── */
         #toast {
             position: fixed; top: 20px; right: 20px;
@@ -822,6 +980,34 @@
     </main>
 </div>
 
+<!-- VIDEO POPUP -->
+<div id="video-popup-overlay">
+    <div class="vp-card">
+        <button class="vp-close" onclick="closeVideoPopup()" title="Close">✕</button>
+        <div class="vp-thumb" onclick="openVideo()">
+            <span class="vp-badge">Latest</span>
+            <img src="https://img.youtube.com/vi/fYsfI1CItYo/maxresdefault.jpg" alt="2026 Discord Bot 24/7 Online">
+            <div class="vp-play-overlay">
+                <div class="vp-play-btn-big">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><polygon points="5,3 19,12 5,21"/></svg>
+                </div>
+            </div>
+        </div>
+        <div class="vp-body">
+            <div class="vp-label">
+                <div class="vp-live-dot"></div>
+                New Video — AGTOP
+            </div>
+            <div class="vp-title">2026 Discord Bot — 24/7 Online<br>AI Character with Image Generation!</div>
+            <button class="vp-watch-btn" onclick="openVideo()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                Watch Video
+            </button>
+            <button class="vp-skip" onclick="closeVideoPopup()">Maybe later →</button>
+        </div>
+    </div>
+</div>
+
 <!-- MODAL -->
 <div id="subModal">
     <div class="modal-card">
@@ -971,6 +1157,26 @@ Return ONLY a valid JSON object with no markdown. Keys: name, age, origin, appea
         document.getElementById('subModal').classList.remove('active');
         generateBot();
     }
+
+    /* ── VIDEO POPUP ── */
+    const VIDEO_URL = 'https://youtu.be/fYsfI1CItYo';
+
+    function openVideo() {
+        window.open(VIDEO_URL, '_blank');
+    }
+
+    function closeVideoPopup() {
+        const overlay = document.getElementById('video-popup-overlay');
+        overlay.classList.add('hidden');
+        setTimeout(() => overlay.style.display = 'none', 350);
+    }
+
+    // Auto-show on load with slight delay for polish
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.getElementById('video-popup-overlay').style.display = 'flex';
+        }, 600);
+    });
 
     /* ── BOT GENERATION ── */
     function generateBot() {

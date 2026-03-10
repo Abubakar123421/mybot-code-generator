@@ -714,7 +714,7 @@
             return;
         }
         try {
-            sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
             sb.auth.getSession().then(({ data }) => setUser(data.session?.user || null));
             sb.auth.onAuthStateChange((_, session) => setUser(session?.user || null));
             loadReviews();

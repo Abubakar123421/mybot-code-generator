@@ -944,7 +944,7 @@
     ════════════════════════════════════════ */
     async function loadReviews() {
         if(!sb) return;
-        const { data, error } = await sb.from('reviews').select('*, profiles:user_id(avatar_url)').order('created_at', { ascending: false });
+const { data, error } = await sb.from('reviews').select('*').order('created_at', { ascending: false });
         if(error) { console.error(error); return; }
         renderReviews(data || []);
         updateRatingStats(data || []);

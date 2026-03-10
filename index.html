@@ -700,7 +700,7 @@
        ════════════════════════════════════════════ */
     const SUPABASE_URL = 'https://eqefbjplccntovynagoc.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxZWZianBsY2NudG92eW5hZ29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNDU2NDYsImV4cCI6MjA4ODcyMTY0Nn0.Ks76pQlepq4xMJHBZ5m83R4OtRyg6ID5fbIec619140';
-    
+    const ADMIN_ID = '1f9e9ed9-e329-4489-bc80-173f733a8ad8';
     /* ── GLOBALS ── */
     let sb = null, currentUser = null, isAdmin = false, selectedRating = 0, currentAuthTab = 'login';
 
@@ -723,13 +723,14 @@
 
     function setUser(user) {
         currentUser = user;
-        isAdmin = !!(user && user.email === ADMIN_EMAIL);
+        // Check against the random ID instead of the email
+        isAdmin = !!(user && user.id === ADMIN_ID);
+        
         if (isAdmin) document.body.classList.add('is-admin');
         else document.body.classList.remove('is-admin');
         updateUserUI();
         updateReviewUI();
     }
-
     function updateUserUI() {
         const u = currentUser;
         document.getElementById('user-menu-email').textContent = u ? u.email : 'Not signed in';
